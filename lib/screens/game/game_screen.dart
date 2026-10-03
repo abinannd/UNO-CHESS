@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:uno_chess/core/chess/chess_color.dart';
+import 'package:uno_chess/core/chess/chess_engine.dart';
+import 'package:uno_chess/core/chess/chess_move.dart';
+import 'package:uno_chess/core/chess/piece_type.dart';
+import 'package:uno_chess/core/chess/position.dart';
+import 'package:uno_chess/core/game/game_state.dart';
+import 'package:uno_chess/core/game/game_status.dart';
+import 'package:uno_chess/core/game/turn_system.dart';
+import 'package:uno_chess/core/uno/uno_card.dart';
+import 'package:uno_chess/core/uno/uno_color.dart';
+import 'package:uno_chess/ui/board/chess_board_widget.dart';
+
+/// The primary screen displaying the active game.
+class GameScreen extends StatefulWidget {
+  const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  // Instantiate the core GameState
+  late final GameState _gameState;
+  
+  Position? _selectedPosition;
+  List<ChessMove> _currentLegalMoves = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _gameState = GameState();
+    
+    // Auto-draw a number card purely to bypass UNO phase for Phase 2 Chess Interaction
+    if (_gameState.turnPhase == TurnPhase.awaitingDraw) {
+      _gameState.drawCard(UnoCard.number(4, UnoColor.red));
+    }
+  }
+
+  Position? get _checkPosition {
+    if (_gameState.status != GameStatus.active) return null;
+    final engine = ChessEngine(_gameState.board);
+    
+    Position? findKing(ChessColor color) {
+      for (int r = 0; r < 8; r++) {
+        for (int f = 0; f < 8; f++) {
+          final p = _gameState.board.getPieceAt(Position(f, r));
+          if (p != null && p.type == PieceType.king && p.color == color) {
+            return Position(f, r);
+          }
+        }
+      }
+      return null;
+    }
+    
+    if (engine.isInCheck(ChessColor.white)) return findKing(ChessColor.white);
+    if (engine.isInCheck(ChessColor.black)) return findKing(ChessColor.black);
+    
+    return null;
+  }
+
+  void _onSquareTapped(Position position) {
+    if (_gameState.status != GameStatus.active) return;
+    if (_gameState.turnPhase != TurnPhase.awaitingChessMove) return;
+
+    final controlledColor = _gameState.currentPlayer.controlledColor;
+
+    if (_selectedPosition != null) {
+      final matchingMoves = _currentLegalMoves
+          .where((m) => m.from == _selectedPosition && m.to == position)
+          .toList();
+
+      if (matchingMoves.isNotEmpty) {
+        if (matchingMoves.any((m) => m.promotion != null)) {
+          _showPromotionDialog(matchingMoves.first);
+          return;
+        }
+        
+        _executeMove(matchingMoves.first);
+        return;
+      }
+    }
+
+    // Select piece
+    final piece = _gameState.board.getPieceAt(position);
+    if (piece != null && piece.color == controlledColor) {
+      setState(() {
+        _selectedPosition = position;
+        final engine = ChessEngine(_gameState.board);
+        _currentLegalMoves = engine.generateLegalMoves(controlledColor)
+            .where((m) => m.from == position)
+            .toList();
+      });
+    } else {
+      // Tapped elsewhere, deselect
+      setState(() {
+        _selectedPosition = null;
+        _currentLegalMoves = [];
+      });
+    }
+  }
+
+  void _executeMove(ChessMove move) {
+    setState(() {
+      _gameState.executeChessMove(move);
+      _selectedPosition = null;
+      _currentLegalMoves = [];
+      
+      // Auto-draw next card if turn ended, to keep chess going for Phase 2 testing
+      if (_gameState.status == GameStatus.active && _gameState.turnPhase == TurnPhase.awaitingDraw) {
+        _gameState.drawCard(UnoCard.number(4, UnoColor.red));
+      }
+    });
+  }
+
+  void _showPromotionDialog(ChessMove baseMove) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Promote Pawn'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [PieceType.queen, PieceType.rook, PieceType.bishop, PieceType.knight]
+              .map((type) => ListTile(
+                    title: Text(type.name.toUpperCase()),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _executeMove(ChessMove(
+                        from: baseMove.from,
+                        to: baseMove.to,
+                        promotion: type,
+                      ));
+                    },
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('UNO Chess'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ChessBoardWidget(
+              board: _gameState.board,
+              isReversed: _gameState.isBoardReversed,
+              selectedPosition: _selectedPosition,
+              legalDestinations: _currentLegalMoves.map((m) => m.to).toList(),
+              checkPosition: _checkPosition,
+              onSquareTapped: _onSquareTapped,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
