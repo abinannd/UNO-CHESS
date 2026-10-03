@@ -1,0 +1,86 @@
+import '../chess/board.dart';
+import '../chess/chess_color.dart';
+import '../chess/chess_engine.dart';
+import '../chess/chess_move.dart';
+import '../uno/uno_card.dart';
+import '../uno/uno_effect.dart';
+import 'game_status.dart';
+import 'player_state.dart';
+import 'turn_system.dart';
+
+/// The central GameState representing the entire UNO Chess game.
+/// Composes the TurnSystem and ChessBoard, serving as the single source of truth.
+class GameState {
+  final TurnSystem _turnSystem;
+  final ChessBoard _board;
+  GameStatus status;
+
+  GameState({
+    TurnSystem? turnSystem,
+    ChessBoard? board,
+    this.status = GameStatus.active,
+  })  : _turnSystem = turnSystem ?? TurnSystem(),
+        _board = board ?? ChessBoard.initial() {
+    _updateGameStatus();
+  }
+
+  // ── Exposed State Properties ───────────────────────────────────────────────
+
+  PlayerState get player1 => _turnSystem.player1;
+  PlayerState get player2 => _turnSystem.player2;
+  PlayerState get currentPlayer => _turnSystem.currentPlayer;
+
+  ChessBoard get board => _board;
+
+  int get movesAllowed => _turnSystem.movesAllowed;
+  int get movesCompleted => _turnSystem.movesCompleted;
+
+  UnoCard? get currentCard => _turnSystem.currentCard;
+  UnoEffect? get currentEffect => _turnSystem.currentEffect;
+
+  bool get isBoardReversed => _turnSystem.isBoardReversed;
+  TurnPhase get turnPhase => _turnSystem.phase;
+
+  // ── API for Game Progression ────────────────────────────────────────────────
+
+  /// Draws a UNO card for the current player.
+  void drawCard(UnoCard card) {
+    if (status != GameStatus.active) return;
+    _turnSystem.drawCard(card);
+    _updateGameStatus();
+  }
+
+  /// Resolves a drawn Rainbow card into a specific effect.
+  void resolveRainbow(UnoEffect effect) {
+    if (status != GameStatus.active) return;
+    _turnSystem.resolveRainbow(effect);
+    _updateGameStatus();
+  }
+
+  /// Executes a chess move on the board.
+  /// Returns true if the move was legal and successful.
+  bool executeChessMove(ChessMove move) {
+    if (status != GameStatus.active) return false;
+
+    final success = _turnSystem.executeChessMove(move, _board);
+    if (success) {
+      _updateGameStatus();
+    }
+    return success;
+  }
+
+  // ── Internal Helpers ───────────────────────────────────────────────────────
+
+  void _updateGameStatus() {
+    if (status != GameStatus.active) return;
+
+    final engine = ChessEngine(_board);
+
+    // Evaluate terminal states universally across both sides
+    if (engine.isCheckmate(ChessColor.white) || engine.isCheckmate(ChessColor.black)) {
+      status = GameStatus.checkmate;
+    } else if (engine.isStalemate(ChessColor.white) || engine.isStalemate(ChessColor.black)) {
+      status = GameStatus.stalemate;
+    }
+  }
+}
