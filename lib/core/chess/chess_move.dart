@@ -7,12 +7,16 @@ class ChessMove {
   final Position to;
   final ChessPiece? capturedPiece;
   final PieceType? promotion;
+  final bool isCastling;
+  final bool isEnPassant;
 
   const ChessMove({
     required this.from,
     required this.to,
     this.capturedPiece,
     this.promotion,
+    this.isCastling = false,
+    this.isEnPassant = false,
   });
 
   @override
@@ -23,14 +27,24 @@ class ChessMove {
           from == other.from &&
           to == other.to &&
           capturedPiece == other.capturedPiece &&
-          promotion == other.promotion;
+          promotion == other.promotion &&
+          isCastling == other.isCastling &&
+          isEnPassant == other.isEnPassant;
 
   @override
   int get hashCode =>
-      from.hashCode ^ to.hashCode ^ capturedPiece.hashCode ^ promotion.hashCode;
+      from.hashCode ^
+      to.hashCode ^
+      capturedPiece.hashCode ^
+      promotion.hashCode ^
+      isCastling.hashCode ^
+      isEnPassant.hashCode;
 
   @override
   String toString() {
+    if (isCastling) {
+      return to.file == 6 ? 'O-O' : 'O-O-O';
+    }
     final captureStr = capturedPiece != null ? ' x $capturedPiece' : '';
     final promoStr = promotion != null ? ' = ${promotion!.name}' : '';
     return 'Move($from -> $to$captureStr$promoStr)';

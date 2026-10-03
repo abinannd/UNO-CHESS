@@ -17,7 +17,7 @@ class ChessEngine {
     return pseudoMoves.where((move) {
       // Simulate move
       final simulatedBoard = board.clone();
-      simulatedBoard.movePiece(move.from, move.to);
+      simulatedBoard.executeMove(move);
       
       // Find our king
       Position? kingPos;
@@ -64,5 +64,13 @@ class ChessEngine {
   
   bool isSquareAttacked(Position pos, ChessColor attackingColor) {
     return MoveGenerator(board).isSquareAttacked(pos, attackingColor);
+  }
+
+  bool isCheckmate(ChessColor color) {
+    return isInCheck(color) && !hasLegalMoves(color);
+  }
+
+  bool isStalemate(ChessColor color) {
+    return !isInCheck(color) && !hasLegalMoves(color);
   }
 }
