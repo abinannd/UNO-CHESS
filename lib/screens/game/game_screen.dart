@@ -75,15 +75,16 @@ class _GameScreenState extends State<GameScreen> {
           _showPromotionDialog(matchingMoves.first);
           return;
         }
-        
+
         _executeMove(matchingMoves.first);
         return;
       }
     }
 
-    // Select piece
+    // Tapped a square — check if it is an own piece (select or re-select).
     final piece = _gameState.board.getPieceAt(position);
     if (piece != null && piece.color == controlledColor) {
+      // Re-selecting another own piece is allowed — switch selection.
       setState(() {
         _selectedPosition = position;
         final engine = ChessEngine(_gameState.board);
@@ -92,7 +93,7 @@ class _GameScreenState extends State<GameScreen> {
             .toList();
       });
     } else {
-      // Tapped elsewhere, deselect
+      // Tapped empty square or opponent piece that is not a legal destination — deselect.
       setState(() {
         _selectedPosition = null;
         _currentLegalMoves = [];

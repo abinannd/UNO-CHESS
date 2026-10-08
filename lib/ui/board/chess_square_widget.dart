@@ -44,12 +44,18 @@ class ChessSquareWidget extends StatelessWidget {
           children: [
             if (pieceWidget != null) pieceWidget!,
             if (isLegalDestination)
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2),
-                  shape: BoxShape.circle,
+              ColorFiltered(
+                colorFilter: const ColorFilter.matrix(<double>[
+                  0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0,
+                 -1, 0, 0, 0, 255,
+                ]),
+                child: Image.asset(
+                  'assets/ui/dot.png',
+                  width: 16,
+                  height: 16,
+                  fit: BoxFit.contain,
                 ),
               ),
           ],
