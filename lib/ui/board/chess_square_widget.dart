@@ -42,20 +42,21 @@ class ChessSquareWidget extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            if (pieceWidget != null) pieceWidget!,
+            if (pieceWidget != null)
+              Positioned.fill(
+                child: pieceWidget!,
+              ),
             if (isLegalDestination)
-              ColorFiltered(
-                colorFilter: const ColorFilter.matrix(<double>[
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                 -1, 0, 0, 0, 255,
-                ]),
-                child: Image.asset(
-                  'assets/ui/dot.png',
-                  width: 16,
-                  height: 16,
-                  fit: BoxFit.contain,
+              Positioned.fill(
+                child: Center(
+                  child: Image.asset(
+                    'assets/ui/dot.png',
+                    width: 16,
+                    height: 16,
+                    fit: BoxFit.contain,
+                    color: backgroundColor,
+                    colorBlendMode: BlendMode.multiply,
+                  ),
                 ),
               ),
           ],
