@@ -10,6 +10,7 @@ import 'package:uno_chess/core/game/turn_system.dart';
 import 'package:uno_chess/core/uno/uno_card.dart';
 import 'package:uno_chess/core/uno/uno_color.dart';
 import 'package:uno_chess/ui/board/chess_board_widget.dart';
+import 'package:uno_chess/ui/hud/game_hud.dart';
 
 /// The primary screen displaying the active game.
 class GameScreen extends StatefulWidget {
@@ -148,18 +149,33 @@ class _GameScreenState extends State<GameScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ChessBoardWidget(
-              board: _gameState.board,
-              isReversed: _gameState.isBoardReversed,
-              selectedPosition: _selectedPosition,
-              legalDestinations: _currentLegalMoves.map((m) => m.to).toList(),
-              checkPosition: _checkPosition,
-              onSquareTapped: _onSquareTapped,
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: GameHudWidget(
+                gameState: _gameState,
+                isInCheck: _checkPosition != null,
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ChessBoardWidget(
+                    board: _gameState.board,
+                    isReversed: _gameState.isBoardReversed,
+                    selectedPosition: _selectedPosition,
+                    legalDestinations: _currentLegalMoves.map((m) => m.to).toList(),
+                    checkPosition: _checkPosition,
+                    onSquareTapped: _onSquareTapped,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
