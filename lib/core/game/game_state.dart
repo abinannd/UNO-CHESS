@@ -2,6 +2,8 @@ import '../chess/board.dart';
 import '../chess/chess_color.dart';
 import '../chess/chess_engine.dart';
 import '../chess/chess_move.dart';
+import '../chess/piece_type.dart';
+import '../chess/position.dart';
 import '../uno/uno_card.dart';
 import '../uno/uno_effect.dart';
 import 'game_status.dart';
@@ -88,6 +90,27 @@ class GameState {
       _updateGameStatus();
     }
     return success;
+  }
+
+  // ── Revival API ────────────────────────────────────────────────────────────
+
+  /// Returns true if the current player can revive any piece.
+  bool get canReviveAny {
+    if (status != GameStatus.active) return false;
+    final player = _turnSystem.currentPlayer;
+    for (final cp in player.capturedPieces) {
+      if (player.revivalSystem.canRevive(cp.type, cp.color, _board)) return true;
+    }
+    return false;
+  }
+
+  /// Executes a revival for the current player.
+  /// Delegates entirely to [RevivalSystem.revive]; throws [RevivalException] on failure.
+  void revive(PieceType type, Position spawnSquare) {
+    if (status != GameStatus.active) return;
+    final player = _turnSystem.currentPlayer;
+    player.revivalSystem.revive(type, player.controlledColor, spawnSquare, _board);
+    _updateGameStatus();
   }
 
   // ── Internal Helpers ───────────────────────────────────────────────────────

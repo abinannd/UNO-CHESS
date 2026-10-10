@@ -14,6 +14,7 @@ import 'package:uno_chess/core/uno/uno_effect.dart';
 import 'package:uno_chess/core/uno/special_effect.dart';
 import 'package:uno_chess/ui/board/chess_board_widget.dart';
 import 'package:uno_chess/ui/hud/game_hud.dart';
+import 'package:uno_chess/ui/revival/revival_dialog.dart';
 
 /// The primary screen displaying the active game.
 class GameScreen extends StatefulWidget {
@@ -199,6 +200,16 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  void _showRevivalDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => RevivalDialog(
+        gameState: _gameState,
+        onRevivalComplete: () => setState(() {}),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -235,59 +246,89 @@ class _GameScreenState extends State<GameScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _gameState.turnPhase == TurnPhase.awaitingDraw
-                      ? () {
-                          final generator = UnoCardGenerator();
-                          setState(() {
-                            _gameState.drawCard(generator.generate());
-                          });
-                          
-                          if (_gameState.turnPhase == TurnPhase.resolvingReverse) {
-                            Future.delayed(const Duration(seconds: 1), () {
-                              if (mounted) {
-                                setState(() {
-                                  _gameState.completeReverse();
-                                });
-                              }
-                            });
-                          } else if (_gameState.turnPhase == TurnPhase.resolvingSkip) {
-                            Future.delayed(const Duration(seconds: 1), () {
-                              if (mounted) {
-                                setState(() {
-                                  _gameState.completeSkip();
-                                });
-                              }
-                            });
-                          } else if (_gameState.turnPhase == TurnPhase.resolvingDraw2Draw4) {
-                            Future.delayed(const Duration(seconds: 1), () {
-                              if (mounted) {
-                                setState(() {
-                                  _gameState.completeDraw2Draw4();
-                                });
-                              }
-                            });
-                          } else if (_gameState.turnPhase == TurnPhase.awaitingRainbowResolution) {
-                            _showRainbowDialog();
-                          }
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blueAccent,
-                    disabledBackgroundColor: Colors.grey.shade800,
-                  ),
-                  child: const Text(
-                    'DRAW',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              child: Row(
+                children: [
+                  // REVIVE button
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _gameState.canReviveAny
+                          ? _showRevivalDialog
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        backgroundColor: Colors.green.shade700,
+                        disabledBackgroundColor: Colors.grey.shade800,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'REVIVE',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  // DRAW button (expanded to fill remaining space)
+                  Expanded(
+                    child: SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _gameState.turnPhase == TurnPhase.awaitingDraw
+                            ? () {
+                                final generator = UnoCardGenerator();
+                                setState(() {
+                                  _gameState.drawCard(generator.generate());
+                                });
+
+                                if (_gameState.turnPhase == TurnPhase.resolvingReverse) {
+                                  Future.delayed(const Duration(seconds: 1), () {
+                                    if (mounted) {
+                                      setState(() { _gameState.completeReverse(); });
+                                    }
+                                  });
+                                } else if (_gameState.turnPhase == TurnPhase.resolvingSkip) {
+                                  Future.delayed(const Duration(seconds: 1), () {
+                                    if (mounted) {
+                                      setState(() { _gameState.completeSkip(); });
+                                    }
+                                  });
+                                } else if (_gameState.turnPhase == TurnPhase.resolvingDraw2Draw4) {
+                                  Future.delayed(const Duration(seconds: 1), () {
+                                    if (mounted) {
+                                      setState(() { _gameState.completeDraw2Draw4(); });
+                                    }
+                                  });
+                                } else if (_gameState.turnPhase == TurnPhase.awaitingRainbowResolution) {
+                                  _showRainbowDialog();
+                                }
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.blueAccent,
+                          disabledBackgroundColor: Colors.grey.shade800,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'DRAW',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
