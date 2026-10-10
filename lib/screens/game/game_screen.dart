@@ -237,6 +237,14 @@ class _GameScreenState extends State<GameScreen> {
                                 });
                               }
                             });
+                          } else if (_gameState.turnPhase == TurnPhase.resolvingSkip) {
+                            Future.delayed(const Duration(seconds: 1), () {
+                              if (mounted) {
+                                setState(() {
+                                  _gameState.completeSkip();
+                                });
+                              }
+                            });
                           } else if (_gameState.turnPhase == TurnPhase.awaitingRainbowResolution) {
                             _showRainbowDialog();
                           }

@@ -12,6 +12,7 @@ enum TurnPhase {
   awaitingDraw,
   awaitingRainbowResolution,
   resolvingReverse,
+  resolvingSkip,
   awaitingChessMove,
 }
 
@@ -107,6 +108,13 @@ class TurnSystem {
     _endTurn(swapPlayer: false);
   }
 
+  void completeSkip() {
+    if (phase != TurnPhase.resolvingSkip) {
+      throw StateError('Not resolving skip');
+    }
+    _endTurn(swapPlayer: true);
+  }
+
   void _applyEffect(UnoEffect effect) {
     currentEffect = effect;
     movesAllowed = effect.chessMoves;
@@ -125,8 +133,14 @@ class TurnSystem {
       return;
     }
 
-    // Skip or RP-only cards (like +2/+4) end the turn immediately
-    if (effect.isSkip || movesAllowed == 0) {
+    // Skip requires UI delay, shift to resolvingSkip phase
+    if (effect.isSkip) {
+      phase = TurnPhase.resolvingSkip;
+      return;
+    }
+
+    // RP-only cards (like +2/+4) end the turn immediately
+    if (movesAllowed == 0) {
       _endTurn(swapPlayer: true);
       return;
     }

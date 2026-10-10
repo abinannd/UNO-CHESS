@@ -64,6 +64,13 @@ class GameState {
     _updateGameStatus();
   }
 
+  /// Completes the Skip card effect after the UI delay.
+  void completeSkip() {
+    if (status != GameStatus.active) return;
+    _turnSystem.completeSkip();
+    _updateGameStatus();
+  }
+
   /// Executes a chess move on the board.
   /// Returns true if the move was legal and successful.
   bool executeChessMove(ChessMove move) {
