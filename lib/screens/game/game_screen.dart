@@ -180,6 +180,22 @@ class _GameScreenState extends State<GameScreen> {
           });
         }
       });
+    } else if (_gameState.turnPhase == TurnPhase.resolvingSkip) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _gameState.completeSkip();
+          });
+        }
+      });
+    } else if (_gameState.turnPhase == TurnPhase.resolvingDraw2Draw4) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _gameState.completeDraw2Draw4();
+          });
+        }
+      });
     }
   }
 
@@ -242,6 +258,14 @@ class _GameScreenState extends State<GameScreen> {
                               if (mounted) {
                                 setState(() {
                                   _gameState.completeSkip();
+                                });
+                              }
+                            });
+                          } else if (_gameState.turnPhase == TurnPhase.resolvingDraw2Draw4) {
+                            Future.delayed(const Duration(seconds: 1), () {
+                              if (mounted) {
+                                setState(() {
+                                  _gameState.completeDraw2Draw4();
                                 });
                               }
                             });

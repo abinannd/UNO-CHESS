@@ -13,6 +13,7 @@ enum TurnPhase {
   awaitingRainbowResolution,
   resolvingReverse,
   resolvingSkip,
+  resolvingDraw2Draw4,
   awaitingChessMove,
 }
 
@@ -115,6 +116,17 @@ class TurnSystem {
     _endTurn(swapPlayer: true);
   }
 
+  void completeDraw2Draw4() {
+    if (phase != TurnPhase.resolvingDraw2Draw4) {
+      throw StateError('Not resolving +2/+4');
+    }
+    final effect = currentEffect;
+    if (effect != null && effect.revivalPoints > 0) {
+      currentPlayer.revivalSystem.addRevivalPoints(effect.revivalPoints);
+    }
+    _endTurn(swapPlayer: true);
+  }
+
   void _applyEffect(UnoEffect effect) {
     currentEffect = effect;
     movesAllowed = effect.chessMoves;
@@ -122,9 +134,10 @@ class TurnSystem {
 
     final p = currentPlayer;
 
-    // +2 or +4 adds RP
+    // +2 or +4 requires UI delay, shift to resolvingDraw2Draw4 phase
     if (effect.revivalPoints > 0) {
-      p.revivalSystem.addRevivalPoints(effect.revivalPoints);
+      phase = TurnPhase.resolvingDraw2Draw4;
+      return;
     }
 
     // Reverse requires UI delay, shift to resolvingReverse phase
@@ -136,12 +149,6 @@ class TurnSystem {
     // Skip requires UI delay, shift to resolvingSkip phase
     if (effect.isSkip) {
       phase = TurnPhase.resolvingSkip;
-      return;
-    }
-
-    // RP-only cards (like +2/+4) end the turn immediately
-    if (movesAllowed == 0) {
-      _endTurn(swapPlayer: true);
       return;
     }
 

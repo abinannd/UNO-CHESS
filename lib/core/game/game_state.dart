@@ -71,6 +71,13 @@ class GameState {
     _updateGameStatus();
   }
 
+  /// Completes the +2/+4 card effect after the UI delay.
+  void completeDraw2Draw4() {
+    if (status != GameStatus.active) return;
+    _turnSystem.completeDraw2Draw4();
+    _updateGameStatus();
+  }
+
   /// Executes a chess move on the board.
   /// Returns true if the move was legal and successful.
   bool executeChessMove(ChessMove move) {
