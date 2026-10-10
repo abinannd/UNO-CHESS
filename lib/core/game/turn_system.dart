@@ -26,6 +26,22 @@ class TurnSystem {
   int movesCompleted = 0;
   bool isBoardReversed = false;
 
+  bool _p1HasDrawnInitialNumber = false;
+  bool _p2HasDrawnInitialNumber = false;
+
+  bool get _currentPlayerHasInitialNumber =>
+      currentPlayerIdentity == PlayerIdentity.player1
+          ? _p1HasDrawnInitialNumber
+          : _p2HasDrawnInitialNumber;
+
+  void _setCurrentPlayerInitialNumber() {
+    if (currentPlayerIdentity == PlayerIdentity.player1) {
+      _p1HasDrawnInitialNumber = true;
+    } else {
+      _p2HasDrawnInitialNumber = true;
+    }
+  }
+
   TurnSystem({
     PlayerState? player1,
     PlayerState? player2,
@@ -46,6 +62,16 @@ class TurnSystem {
     if (phase != TurnPhase.awaitingDraw) {
       throw StateError('Cannot draw card in phase $phase');
     }
+
+    if (!_currentPlayerHasInitialNumber) {
+      if (card.type != UnoCardType.number) {
+        // First draw MUST be a number card. Discard and stay in awaitingDraw.
+        currentCard = card;
+        return;
+      }
+      _setCurrentPlayerInitialNumber();
+    }
+
     currentCard = card;
     final effect = UnoEffect.fromCard(card);
     if (effect.isRainbow) {

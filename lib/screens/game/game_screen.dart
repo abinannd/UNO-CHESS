@@ -9,6 +9,7 @@ import 'package:uno_chess/core/game/game_status.dart';
 import 'package:uno_chess/core/game/turn_system.dart';
 import 'package:uno_chess/core/uno/uno_card.dart';
 import 'package:uno_chess/core/uno/uno_color.dart';
+import 'package:uno_chess/core/uno/uno_card_generator.dart';
 import 'package:uno_chess/ui/board/chess_board_widget.dart';
 import 'package:uno_chess/ui/hud/game_hud.dart';
 
@@ -31,11 +32,6 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     _gameState = GameState();
-    
-    // Auto-draw a number card purely to bypass UNO phase for Phase 2 Chess Interaction
-    if (_gameState.turnPhase == TurnPhase.awaitingDraw) {
-      _gameState.drawCard(UnoCard.number(4, UnoColor.red));
-    }
   }
 
   Position? get _checkPosition {
@@ -107,11 +103,6 @@ class _GameScreenState extends State<GameScreen> {
       _gameState.executeChessMove(move);
       _selectedPosition = null;
       _currentLegalMoves = [];
-      
-      // Auto-draw next card if turn ended, to keep chess going for Phase 2 testing
-      if (_gameState.status == GameStatus.active && _gameState.turnPhase == TurnPhase.awaitingDraw) {
-        _gameState.drawCard(UnoCard.number(4, UnoColor.red));
-      }
     });
   }
 
@@ -171,6 +162,35 @@ class _GameScreenState extends State<GameScreen> {
                     legalDestinations: _currentLegalMoves.map((m) => m.to).toList(),
                     checkPosition: _checkPosition,
                     onSquareTapped: _onSquareTapped,
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _gameState.turnPhase == TurnPhase.awaitingDraw
+                      ? () {
+                          final generator = UnoCardGenerator();
+                          setState(() {
+                            _gameState.drawCard(generator.generate());
+                          });
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.blueAccent,
+                    disabledBackgroundColor: Colors.grey.shade800,
+                  ),
+                  child: const Text(
+                    'DRAW',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
