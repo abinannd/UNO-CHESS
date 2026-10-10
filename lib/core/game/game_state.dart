@@ -106,10 +106,10 @@ class GameState {
 
   /// Executes a revival for the current player.
   /// Delegates entirely to [RevivalSystem.revive]; throws [RevivalException] on failure.
-  void revive(PieceType type, Position spawnSquare) {
+  void revive(PieceType type, ChessColor pieceColor, Position spawnSquare) {
     if (status != GameStatus.active) return;
     final player = _turnSystem.currentPlayer;
-    player.revivalSystem.revive(type, player.controlledColor, spawnSquare, _board);
+    player.revivalSystem.revive(type, pieceColor, spawnSquare, _board);
     _updateGameStatus();
   }
 

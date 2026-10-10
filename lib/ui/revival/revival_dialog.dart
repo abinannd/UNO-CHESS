@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uno_chess/core/chess/piece_type.dart';
 import 'package:uno_chess/core/chess/position.dart';
+import 'package:uno_chess/core/chess/chess_color.dart';
 import 'package:uno_chess/core/game/game_state.dart';
 import 'package:uno_chess/core/revival/revival_cost.dart';
 
