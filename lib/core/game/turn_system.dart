@@ -2,6 +2,7 @@ import '../chess/board.dart';
 import '../chess/chess_engine.dart';
 import '../chess/chess_move.dart';
 import '../uno/uno_card.dart';
+import '../uno/uno_card_type.dart';
 import '../uno/uno_effect.dart';
 import 'player_identity.dart';
 import 'player_state.dart';
@@ -10,6 +11,7 @@ import 'player_state.dart';
 enum TurnPhase {
   awaitingDraw,
   awaitingRainbowResolution,
+  resolvingReverse,
   awaitingChessMove,
 }
 
@@ -93,6 +95,18 @@ class TurnSystem {
     _applyEffect(resolvedEffect);
   }
 
+  void completeReverse() {
+    if (phase != TurnPhase.resolvingReverse) {
+      throw StateError('Not resolving reverse');
+    }
+    final p1Color = player1.controlledColor;
+    final p2Color = player2.controlledColor;
+    player1 = player1.copyWith(controlledColor: p2Color);
+    player2 = player2.copyWith(controlledColor: p1Color);
+    isBoardReversed = !isBoardReversed;
+    _endTurn(swapPlayer: false);
+  }
+
   void _applyEffect(UnoEffect effect) {
     currentEffect = effect;
     movesAllowed = effect.chessMoves;
@@ -105,14 +119,9 @@ class TurnSystem {
       p.revivalSystem.addRevivalPoints(effect.revivalPoints);
     }
 
-    // Reverse swaps colors and keeps the drawer active
+    // Reverse requires UI delay, shift to resolvingReverse phase
     if (effect.isReverse) {
-      final p1Color = player1.controlledColor;
-      final p2Color = player2.controlledColor;
-      player1 = player1.copyWith(controlledColor: p2Color);
-      player2 = player2.copyWith(controlledColor: p1Color);
-      isBoardReversed = !isBoardReversed;
-      _endTurn(swapPlayer: false);
+      phase = TurnPhase.resolvingReverse;
       return;
     }
 

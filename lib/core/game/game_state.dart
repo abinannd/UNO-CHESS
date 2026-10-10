@@ -57,6 +57,13 @@ class GameState {
     _updateGameStatus();
   }
 
+  /// Completes the Reverse card effect after the UI delay.
+  void completeReverse() {
+    if (status != GameStatus.active) return;
+    _turnSystem.completeReverse();
+    _updateGameStatus();
+  }
+
   /// Executes a chess move on the board.
   /// Returns true if the move was legal and successful.
   bool executeChessMove(ChessMove move) {

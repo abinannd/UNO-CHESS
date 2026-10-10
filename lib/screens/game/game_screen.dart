@@ -10,6 +10,8 @@ import 'package:uno_chess/core/game/turn_system.dart';
 import 'package:uno_chess/core/uno/uno_card.dart';
 import 'package:uno_chess/core/uno/uno_color.dart';
 import 'package:uno_chess/core/uno/uno_card_generator.dart';
+import 'package:uno_chess/core/uno/uno_effect.dart';
+import 'package:uno_chess/core/uno/special_effect.dart';
 import 'package:uno_chess/ui/board/chess_board_widget.dart';
 import 'package:uno_chess/ui/hud/game_hud.dart';
 
@@ -132,6 +134,55 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _showRainbowDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rainbow Card: Choose Effect'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...[1, 2, 3, 4].map((moves) => ListTile(
+                    title: Text('Number $moves'),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _resolveRainbow(UnoEffect.resolve(moves: moves));
+                    },
+                  )),
+              const Divider(),
+              ...[SpecialEffect.plusTwo, SpecialEffect.plusFour, SpecialEffect.skip, SpecialEffect.reverse]
+                  .map((effect) => ListTile(
+                        title: Text(effect.name.toUpperCase()),
+                        onTap: () {
+                          Navigator.of(ctx).pop();
+                          _resolveRainbow(UnoEffect.resolve(specialEffect: effect));
+                        },
+                      )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _resolveRainbow(UnoEffect effect) {
+    setState(() {
+      _gameState.resolveRainbow(effect);
+    });
+
+    if (_gameState.turnPhase == TurnPhase.resolvingReverse) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _gameState.completeReverse();
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,6 +228,18 @@ class _GameScreenState extends State<GameScreen> {
                           setState(() {
                             _gameState.drawCard(generator.generate());
                           });
+                          
+                          if (_gameState.turnPhase == TurnPhase.resolvingReverse) {
+                            Future.delayed(const Duration(seconds: 1), () {
+                              if (mounted) {
+                                setState(() {
+                                  _gameState.completeReverse();
+                                });
+                              }
+                            });
+                          } else if (_gameState.turnPhase == TurnPhase.awaitingRainbowResolution) {
+                            _showRainbowDialog();
+                          }
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
