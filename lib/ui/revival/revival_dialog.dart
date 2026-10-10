@@ -33,7 +33,6 @@ class RevivalDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final player = gameState.currentPlayer;
-    final colorName = player.controlledColor.name; // 'white' or 'black'
     final rp = player.revivalPoints;
 
     return AlertDialog(
@@ -70,8 +69,20 @@ class RevivalDialog extends StatelessWidget {
           runSpacing: 10,
           alignment: WrapAlignment.center,
           children: _revivablePieces.map((type) {
-            final canRevive = player.revivalSystem
-                .canRevive(type, player.controlledColor, gameState.board);
+            // Use the actual chess color of the first captured piece of this type.
+            // Captured pieces are stored with their original chess color, which is
+            // independent of the player's current controlled color (may differ after Reverse).
+            final capturedOfType = player.capturedPieces
+                .where((p) => p.type == type)
+                .toList();
+            final pieceColor = capturedOfType.isNotEmpty
+                ? capturedOfType.first.color
+                : player.controlledColor; // fallback for image display only
+            final colorName = pieceColor.name;
+
+            final canRevive = capturedOfType.isNotEmpty &&
+                player.revivalSystem.canRevive(
+                    type, capturedOfType.first.color, gameState.board);
             final cost = RevivalCost.of(type);
             return _PieceTile(
               type: type,
@@ -79,7 +90,7 @@ class RevivalDialog extends StatelessWidget {
               cost: cost,
               canRevive: canRevive,
               onTap: canRevive
-                  ? () => _onPieceTapped(context, type)
+                  ? () => _onPieceTapped(context, type, capturedOfType.first.color)
                   : () => _showUnavailableReason(context, type, player, cost),
             );
           }).toList(),
@@ -94,13 +105,12 @@ class RevivalDialog extends StatelessWidget {
     );
   }
 
-  void _onPieceTapped(BuildContext context, PieceType type) {
+  void _onPieceTapped(BuildContext context, PieceType type, ChessColor pieceColor) {
     final player = gameState.currentPlayer;
     final spawns = player.revivalSystem
-        .availableSpawnSquares(type, player.controlledColor, gameState.board);
+        .availableSpawnSquares(type, pieceColor, gameState.board);
 
     if (spawns.isEmpty) {
-      // Shouldn't normally be reached (canRevive guards this), but be safe.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No available spawn squares.')),
       );
@@ -108,16 +118,14 @@ class RevivalDialog extends StatelessWidget {
     }
 
     if (spawns.length == 1) {
-      // Auto-select the only available spawn square.
-      _executeRevival(context, type, spawns.first);
+      _executeRevival(context, type, pieceColor, spawns.first);
     } else {
-      // Show square picker.
-      _showSpawnPicker(context, type, spawns);
+      _showSpawnPicker(context, type, pieceColor, spawns);
     }
   }
 
   void _showSpawnPicker(
-      BuildContext context, PieceType type, List<Position> spawns) {
+      BuildContext context, PieceType type, ChessColor pieceColor, List<Position> spawns) {
     showDialog<Position>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -132,7 +140,7 @@ class RevivalDialog extends StatelessWidget {
           children: spawns
               .map((pos) => ListTile(
                     title: Text(
-                      _positionToAlgebraic(pos),
+                      pos.algebraic,
                       style: const TextStyle(color: Colors.white),
                     ),
                     onTap: () => Navigator.of(ctx).pop(pos),
@@ -149,14 +157,14 @@ class RevivalDialog extends StatelessWidget {
       ),
     ).then((chosen) {
       if (chosen != null && context.mounted) {
-        _executeRevival(context, type, chosen);
+        _executeRevival(context, type, pieceColor, chosen);
       }
     });
   }
 
-  void _executeRevival(BuildContext context, PieceType type, Position square) {
+  void _executeRevival(BuildContext context, PieceType type, ChessColor pieceColor, Position square) {
     try {
-      gameState.revive(type, square);
+      gameState.revive(type, pieceColor, square);
       Navigator.of(context).pop(); // Close revival dialog
       onRevivalComplete();
     } catch (e) {
@@ -170,10 +178,16 @@ class RevivalDialog extends StatelessWidget {
   void _showUnavailableReason(
       BuildContext context, PieceType type, dynamic player, int cost) {
     final rp = player.revivalPoints;
-    final hasCaptured = player.capturedPieces
-        .any((p) => p.type == type && p.color == player.controlledColor);
-    final spawns = player.revivalSystem
-        .availableSpawnSquares(type, player.controlledColor, gameState.board);
+    // Find captured pieces of this type using their stored chess color.
+    final captured = (player.capturedPieces as List)
+        .where((p) => p.type == type)
+        .toList();
+    final hasCaptured = captured.isNotEmpty;
+    final pieceColor = hasCaptured ? captured.first.color : null;
+    final spawns = hasCaptured
+        ? player.revivalSystem
+            .availableSpawnSquares(type, pieceColor, gameState.board)
+        : [];
 
     String reason;
     if (!hasCaptured) {
@@ -194,10 +208,7 @@ class RevivalDialog extends StatelessWidget {
     );
   }
 
-  String _positionToAlgebraic(Position pos) {
-    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    return '${files[pos.file]}${pos.rank + 1}';
-  }
+  // _positionToAlgebraic is no longer needed; Position.algebraic getter is used directly.
 }
 
 /// A single square tile showing a piece image, its RP cost, and a
