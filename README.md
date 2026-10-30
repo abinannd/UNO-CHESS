@@ -7,6 +7,23 @@ A two-player, local multiplayer strategy game that combines classic chess with U
 ![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Windows-blue)
 ![Status](https://img.shields.io/badge/status-playable%20prototype-orange)
 
+
+
+## 📥 Download for Android
+
+<a href="https://github.com/abinannd/UNO-CHESS/releases/latest">
+  <img src="https://img.shields.io/badge/Download-Android%20APK-2ea44f?style=for-the-badge&logo=android" alt="Download UNO Chess for Android">
+</a>
+
+Get the latest Android build from **[GitHub Releases](https://github.com/abinannd/UNO-CHESS/releases/latest)**.
+
+1. Download `app-release.apk` from the latest release.
+2. Open the downloaded APK on your Android device.
+3. If prompted, allow your browser or file manager to install unknown apps.
+4. Tap **Install**, then launch UNO Chess.
+
+> Android may display a security warning because this APK is distributed directly rather than through Google Play. Only install builds published in this repository's Releases.
+
 ---
 
 ## Table of Contents
